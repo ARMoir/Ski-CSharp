@@ -6,13 +6,10 @@ public sealed record Score(string Name, long ElapsedTicks, DateTimeOffset Entere
 
 public static class Scores
 {
-    // Preserve the original strict comparison, one slot per user, and ten-entry limit.
+    // Keep the ten fastest runs, including repeated usernames; older ties rank first.
     public static List<Score> Insert(IEnumerable<Score> existing, Score candidate)
     {
         var list = existing.Take(10).ToList();
-        int previous = list.FindIndex(s => s.Name == candidate.Name);
-        if (previous >= 0 && list[previous].ElapsedTicks <= candidate.ElapsedTicks) return list;
-        if (previous >= 0) list.RemoveAt(previous);
         int index = list.FindIndex(s => s.ElapsedTicks > candidate.ElapsedTicks);
         if (index < 0) index = list.Count;
         list.Insert(index, candidate);

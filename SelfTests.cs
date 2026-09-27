@@ -74,9 +74,16 @@ internal static class SelfTests
             var scores = Enumerable.Range(1, 10).Select(i => new Score($"user{i}", i * 100, now)).ToList();
             Check(Scores.Insert(scores, new("late", 1001, now)).SequenceEqual(scores), "Full scoreboard rejects slower time");
             var improved = Scores.Insert(scores, new("user5", 150, now));
-            Check(improved.Count == 10 && improved[1].Name == "user5" && improved.Count(s => s.Name == "user5") == 1, "Personal best moves without duplicate");
-            Check(Scores.Insert(scores, new("user5", 500, now)).SequenceEqual(scores), "Equal personal time unchanged");
+            Check(improved.Count == 10 && improved[1].Name == "user5" && improved.Count(s => s.Name == "user5") == 2, "Faster run preserves earlier run by same user");
+            var equalRun = new Score("user5", 500, now.AddSeconds(1));
+            Check(Scores.Insert(scores, equalRun)[5] == equalRun, "Equal personal time retained after older tie");
             Check(Scores.Insert(scores, new("tie", 100, now))[1].Name == "tie", "Ties stay behind existing scores");
+            List<Score> repeatRuns = [];
+            for (int i = 12; i >= 1; i--)
+                repeatRuns = Scores.Insert(repeatRuns, new("solo", i * 100, now.AddSeconds(12 - i)));
+            Check(repeatRuns.Count == 10 && repeatRuns.Select(s => s.ElapsedTicks).SequenceEqual(Enumerable.Range(1, 10).Select(i => (long)i * 100)), "Ten fastest of twelve runs by one user");
+            var reloaded = System.Text.Json.JsonSerializer.Deserialize<List<Score>>(System.Text.Json.JsonSerializer.Serialize(repeatRuns))!;
+            Check(Scores.Insert(reloaded, new("solo", 150, now.AddSeconds(20))).Select(s => s.ElapsedTicks).SequenceEqual(new long[] { 100, 150, 200, 300, 400, 500, 600, 700, 800, 900 }), "Reloaded JSON retains multiple runs on next insertion");
             Console.WriteLine($"PASS: {checks} checks (physics, tree generation, collisions, full race, high scores).");
             return 0;
         }

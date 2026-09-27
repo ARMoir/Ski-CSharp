@@ -58,7 +58,7 @@ dotnet publish/Ski.dll
 
 - `Game.cs`: independent simulation, single-precision physics, tree ring buffer.
 - `Program.cs`: input, pacing, clock, scrolling terminal display, crash animation.
-- `Scores.cs`: ten-entry personal-best scoreboard stored as JSON.
+- `Scores.cs`: ten-fastest-runs scoreboard stored as JSON.
 - `SelfTests.cs`: dependency-free, headless behavioral checks.
 - `original/ski.for`: unmodified reference source.
 
@@ -85,9 +85,11 @@ velocity and direction, counts a crash, and discards queued input. The clock
 includes crashes and time spent stationary. The displayed split has the
 original minutes:seconds.hundredths format (minutes wrap each hour).
 
-Scores prefer strictly faster elapsed times, retain one personal best per
-12-character username, preserve existing entries ahead of tied newcomers,
-and keep ten entries. No-trees races display scores but do not update them.
+Scores keep the ten fastest completed runs, including multiple runs by the
+same 12-character username, and preserve existing entries ahead of tied
+newcomers. This intentionally changes the original one-personal-best-per-user
+rule. Existing JSON files remain compatible; previously discarded runs cannot
+be recovered. No-trees races display scores but do not update them.
 As in the source, normal and uniform modes share a score list.
 
 ## Fortran-era ambiguities and deliberate replacements
@@ -143,7 +145,8 @@ As in the source, normal and uniform modes share a score list.
 `--self-test` checks clamped acceleration, stopping and rotation limits,
 diagonal motion and slope edges, tree generation call order and wrapping,
 uniform retries, two-column collision/recovery, a complete no-trees race with
-exact marker/split/finish counts, and score insertion/ties/personal bests.
+exact marker/split/finish counts, and score insertion/ties/repeated usernames
+including a JSON round trip.
 These are behavioral regression tests, not proof of equivalence to an executable
 VMS version: the necessary external helpers and original runtime are absent.
 The project was built and tests executed on Windows with .NET SDK 10.0.401.
