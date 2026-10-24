@@ -54,6 +54,34 @@ dotnet publish -c Release -o publish
 dotnet publish/Ski.dll
 ```
 
+## Download packaged executables
+
+The [Package game workflow](https://github.com/ARMoir/Ski-CSharp/actions/workflows/package.yml)
+builds separate self-contained executables; players do not need to install .NET.
+It runs on pushes to `main`, version tags (`v*`), pull requests, and manually
+from **Actions → Package game → Run workflow** after the workflow is merged.
+Each platform runs the published executable's `--self-test` and `--help`
+before uploading its package.
+
+Open a successful workflow run and download the appropriate **Artifacts** entry
+(GitHub sign-in is required). Downloads are retained for 30 days:
+
+| Artifact | Platform | Packaged file |
+| --- | --- | --- |
+| `Ski-win-x64` | Windows x64 | `Ski-win-x64.zip` |
+| `Ski-osx-x64` | Intel Mac | `Ski-osx-x64.tar.gz` |
+| `Ski-osx-arm64` | Apple Silicon Mac | `Ski-osx-arm64.tar.gz` |
+| `Ski-linux-x64` | Linux x64 (glibc, such as Ubuntu) | `Ski-linux-x64.tar.gz` |
+
+Extract the downloaded artifact ZIP, then extract the archive inside it.
+From the extracted folder in an interactive terminal, run `./Ski.exe` on
+Windows or `./Ski` on macOS/Linux. On macOS/Linux, extract the `.tar.gz` with
+`tar -xzf Ski-<platform>.tar.gz` to preserve executable permissions.
+Use a terminal at least 80 columns by 24 rows. These are terminal executables,
+not installers or macOS app bundles, and are not publisher-signed or notarized.
+The archives include this README and the original source with its copyright
+notice. Builds download .NET runtime packs from NuGet; playing remains offline.
+
 ## Project map
 
 - `Game.cs`: independent simulation, single-precision physics, tree ring buffer.
