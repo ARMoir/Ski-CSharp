@@ -1,0 +1,82 @@
+name: Package game
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Package ${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            rid: win-x64
+            executable: Ski.exe
+          - os: macos-15-intel
+            rid: osx-x64
+            executable: Ski
+          - os: macos-15
+            rid: osx-arm64
+            executable: Ski
+          - os: ubuntu-24.04
+            rid: linux-x64
+            executable: Ski
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      # NuGet.Config disables feeds for normal builds. Publishing needs the
+      # runtime packs and single-file tooling from NuGet, so override it here.
+      - name: Publish standalone executable
+        run: >-
+          dotnet publish Ski.csproj -c Release -r ${{ matrix.rid }}
+          --self-contained true --source https://api.nuget.org/v3/index.json
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:DebugType=None -p:DebugSymbols=false
+          -o publish/${{ matrix.rid }}
+
+      - name: Test published executable
+        run: |
+          & "./publish/${{ matrix.rid }}/${{ matrix.executable }}" --self-test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "./publish/${{ matrix.rid }}/${{ matrix.executable }}" --help
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Package download
+        run: |
+          $package = "publish/${{ matrix.rid }}"
+          Copy-Item README.md $package
+          New-Item -ItemType Directory -Path "$package/original" -Force | Out-Null
+          Copy-Item original/ski.for "$package/original/"
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          if ($IsWindows) {
+            Compress-Archive -Path "$package/*" -DestinationPath "dist/Ski-${{ matrix.rid }}.zip"
+          } else {
+            # Tar preserves the executable bit when downloaded from Actions.
+            tar -czf "dist/Ski-${{ matrix.rid }}.tar.gz" -C $package .
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Upload download
+        uses: actions/upload-artifact@v7
+        with:
+          name: Ski-${{ matrix.rid }}
+          path: dist/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
