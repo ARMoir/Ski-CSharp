@@ -56,6 +56,13 @@ dotnet publish/Ski.dll
 
 ## Download packaged executables
 
+Download the Windows, macOS, or Linux package from the
+[Releases page](https://github.com/ARMoir/Ski-CSharp/releases/latest).
+Extract the ZIP on Windows or the `.tar.gz` on macOS/Linux, then run `./Ski.exe`
+or `./Ski` in a terminal. No .NET installation is required.
+Pushing a version tag such as `v1.0.0` builds and tests all four platforms,
+then publishes their archives together as assets on a GitHub Release.
+
 The [Package game workflow](https://github.com/ARMoir/Ski-CSharp/actions/workflows/package.yml)
 builds separate self-contained executables; players do not need to install .NET.
 It runs on pushes to `main`, version tags (`v*`), pull requests, and manually
